@@ -1,0 +1,10 @@
+{
+  "name": "BLOCKTALE",
+  "short_name": "BLOCKTALE",
+  "description": "Un juego básico de quiz: responde bien las preguntas para destruir los bloques.",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#111111",
+  "theme_color": "#111111"
+}
