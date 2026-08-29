@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BLOCKTALE</title>
+
+<style>
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    background:#111;
+    color:white;
+    font-family:Arial,sans-serif;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+    text-align:center;
+}
+
+#game{
+    width:min(950px,95vw);
+    padding:25px;
+}
+
+h1{
+    font-size:48px;
+}
+
+#top{
+    display:flex;
+    justify-content:space-between;
+    font-size:22px;
+    margin-bottom:25px;
+}
+
+#blocks{
+    font-size:65px;
+    letter-spacing:8px;
+    min-height:130px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+}
+
+#bossHearts{
+    font-size:30px;
+    margin-top:5px;
+}
+
+#message{
+    font-size:21px;
+    min-height:55px;
+    margin:10px;
+}
+
+#question{
+    font-size:27px;
+    margin:25px 0;
+}
+
+#answers{
+    width:100%;
+}
+
+#armor{font-size:28px;margin-top:12px;}
+#lives{font-size:28px;margin-top:8px;}
+
+button{
+    display:block;
+    width:80%;
+    max-width:600px;
+    margin:12px auto;
+    padding:15px;
+    font-size:21px;
+    border:3px solid white;
+    border-radius:12px;
+    background:#222;
+    color:white;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#444;
+    transform:scale(1.02);
+}
+
+button:disabled{
+    cursor:default;
+}
+
+.bigbutton{
+    font-size:30px;
+    padding:20px;
+}
+
+.small{
+    font-size:17px;
+    opacity:.8;
+}
+
+.shake{
+    animation:shake .25s;
+}
+
+@keyframes shake{
+    0%{transform:translateX(0)}
+    25%{transform:translateX(-8px)}
+    50%{transform:translateX(8px)}
+    75%{transform:translateX(-8px)}
+    100%{transform:translateX(0)}
+}
+</style>
+</head>
+
+<body>
+
+<div id="game"></div>
+
+<script>
+
+let level=0;
+let block=0;
+let lives=3;
+let armor=4;
+let bossLives=3;
+let timeLeft=60;
+let gameOver=false;
+let timerInterval=null;
+
+
+/* =========================
+   PREGUNTAS
+========================= */
+
+const data=[
+
+[
+["¿Cuál es el planeta más grande?","Marte","Júpiter","Venus",1],
+["¿Cuántos lados tiene un hexágono?","6","9","5",0],
+["¿Cuál es el océano más grande?","Atlántico","Índico","Pacífico",2]
+],
+
+[
+["¿Cuánto es 15 + 27?","32","42","52",1],
+["¿Qué gas es el más abundante en la atmósfera?","Nitrógeno","Oxígeno","Helio",0],
+["¿Cuál es la capital de Francia?","Roma","Madrid","París",2]
+],
+
+[
+["¿Cuál es el animal más grande del mundo?","Elefante africano","Ballena azul","Jirafa",1],
+["¿Cuántos minutos tiene una hora?","50","60","100",1],
+["¿Cuál es el planeta rojo?","Marte","Saturno","Mercurio",0]
+],
+
+[
+["¿Qué órgano bombea la sangre?","Pulmón","Cerebro","Corazón",2],
+["¿Cuánto es 8 × 7?","54","56","64",1],
+["¿Cuál es el continente más grande?","Asia","Europa","África",0]
+],
+
+[
+["¿Qué fuerza nos mantiene sobre la Tierra?","Magnetismo","Gravedad","Electricidad",1],
+["¿Cuántos huesos tiene aproximadamente un adulto?","206","106","306",0],
+["¿Qué metal es líquido a temperatura ambiente?","Hierro","Mercurio","Cobre",1]
+],
+
+[
+["¿Qué proceso convierte el agua líquida en vapor?","Condensación","Precipitación","Evaporación",2],
+["¿Qué planeta tiene los anillos más famosos?","Saturno","Venus","Marte",0],
+["¿Cuál es el símbolo químico del oxígeno?","Ox","O","Og",1]
+],
+
+[
+["¿Qué capa de la Tierra habitamos?","Núcleo","Corteza","Manto",1],
+["¿Qué instrumento mide la temperatura?","Barómetro","Termómetro","Altímetro",1],
+["¿Cuál es el satélite natural de la Tierra?","La Luna","Fobos","Europa",0]
+],
+
+[
+["¿Qué ocurre cuando el vapor de agua se enfría y vuelve a líquido?","Evaporación","Condensación","Fusión",1],
+["¿Cuál es el planeta más cercano al Sol?","Mercurio","Venus","Marte",0],
+["¿Qué gas necesitan las plantas para la fotosíntesis?","Oxígeno","Nitrógeno","Dióxido de carbono",2]
+],
+
+[
+["¿Cuál es el orden básico del ciclo del agua?","Evaporación → condensación → precipitación","Precipitación → evaporación → congelación","Condensación → evaporación → precipitación",0],
+["¿Qué parte de la célula contiene la mayor parte del material genético?","Membrana","Núcleo","Citoplasma",1],
+["¿Por qué vemos la Luna aunque no produzca su propia luz?","Porque refleja luz del Sol","Porque genera electricidad","Porque está hecha de fuego",0]
+]
+
+];
+
+
+/* =========================
+   FRASES
+========================= */
+
+const jokes=[
+
+"Esto es más fácil que caminar 😂",
+"Esto lo sabe hasta un perro 🐶",
+"Venga, piensa un poquito 🤔",
+"Mi abuela sabía esto.",
+"¿De verdad me vas a romper con esa pregunta? 😭",
+"Esto ya empieza a ponerse serio...",
+"Los bloques empiezan a tener miedo... 👀",
+"¿Seguro que quieres continuar?",
+"ESTA ES TU ÚLTIMA OPORTUNIDAD 😈"
+
+];
+
+
+const failJokes=[
+
+"JAJAJAJA NO SABE NADA 😂",
+"¿¿¿EN SERIO??? 💀",
+"Eso era bastante fácil...",
+"Mi abuela sabía eso 😭",
+"JAJAJA, qué respuesta...",
+"El bloque acaba de perder la fe en ti.",
+"¿Cómo has conseguido fallar eso? 😂",
+"Los bloques están celebrándolo.",
+"NOOOOO 😭"
+
+];
+
+
+/* =========================
+   MENÚ
+========================= */
+
+function startScreen(){
+
+    clearInterval(timerInterval);
+
+    document.getElementById("game").innerHTML=`
+
+        <h1>🧱 BLOCKTALE 🧱</h1>
+
+        <p style="font-size:24px">
+            ¿Serás capaz de destruir los bloques?
+        </p>
+
+        <p>
+            🧱 9 niveles<br>
+            ❤️ 3 vidas iniciales<br>
+            ⏱️ 1 minuto por nivel<br>
+            👑 2 minutos en el nivel final
+        </p>
+
+        <p>
+            💛 Tienes 4 corazones de armadura.<br>
+            ❤️ Tienes 3 corazones de vida como máximo.<br>
+            ❤️ Cada 3 niveles recuperas 1 corazón de vida, hasta un máximo de 3.
+        </p>
+
+        <button class="bigbutton" onclick="startGame()">
+            🎮 JUGAR
+        </button>
+
+        <p class="small">
+            Al final tendrás que tomar una decisión...
+        </p>
+    `;
+}
+
+
+/* =========================
+   INICIAR
+========================= */
+
+function startGame(){
+
+    level=0;
+    block=0;
+    lives=3;
+    armor=4;
+    bossLives=3;
+    gameOver=false;
+
+    startLevel();
+}
+
+
+/* =========================
+   NIVEL
+========================= */
+
+function startLevel(){
+
+    timeLeft=(level===8)?120:60;
+
+    clearInterval(timerInterval);
+
+    showQuestion();
+
+    timerInterval=setInterval(()=>{
+
+        if(gameOver)return;
+
+        timeLeft--;
+
+        updateTimer();
+
+        if(timeLeft<=0){
+            timeout();
+        }
+
+    },1000);
+
+    updateTimer();
+}
+
+
+/* =========================
+   TEMPORIZADOR
+========================= */
+
+function updateTimer(){
+
+    let min=Math.floor(timeLeft/60);
+
+    let sec=timeLeft%60;
+
+    const timer=document.getElementById("timer");
+
+    if(timer){
+
+        timer.textContent=
+            "⏱️ "+
+            min+
+            ":"+
+            String(sec).padStart(2,"0");
+
+    }
+}
+
+
+/* =========================
+   BLOQUES
+========================= */
+
+function updateBlocks(){
+
+    const blocks=document.getElementById("blocks");
+
+    if(!blocks)return;
+
+    if(level===8){
+
+        blocks.innerHTML=`
+
+            <div style="font-size:70px">
+                👑 🧱 🧱 🧱 👑
+            </div>
+
+            <div id="bossHearts">
+                ${"❤️".repeat(bossLives)}
+                ${"🖤".repeat(3-bossLives)}
+            </div>
+
+        `;
+
+        return;
+    }
+
+    let cantidad=3-block;
+
+    if(cantidad<0)
+        cantidad=0;
+
+    blocks.textContent=
+        "🧱 ".repeat(cantidad).trim();
+}
+
+
+/* =========================
+   VIDAS
+========================= */
+
+function updateLives(){
+    const armorElement=document.getElementById("armor");
+    const livesElement=document.getElementById("lives");
+    if(armorElement) armorElement.textContent="💛".repeat(armor)+"🖤".repeat(4-armor);
+    if(livesElement) livesElement.textContent="❤️".repeat(lives)+"🖤".repeat(3-lives);
+}
+
+
+/* =========================
+   PREGUNTA
+========================= */
+
+function showQuestion(){
+
+    if(gameOver)return;
+
+    document.getElementById("game").innerHTML=`
+
+        <div id="top">
+
+            <span>
+                NIVEL ${level+1}/9
+            </span>
+
+            <span id="timer"></span>
+
+        </div>
+
+        <div id="blocks"></div>
+
+        <div id="message"></div>
+
+        <div id="question"></div>
+
+        <div id="answers"></div>
+
+        <div id="armor"></div>
+        <div id="lives"></div>
+    `;
+
+    updateBlocks();
+
+    updateLives();
+
+    updateTimer();
+
+
+    if(level===8){
+
+        document.getElementById("message").textContent=
+            "👑 BLOQUE SUPREMO: ¡DEMUESTRA LO QUE SABES! 👑";
+
+    }else{
+
+        document.getElementById("message").textContent=
+            jokes[level];
+
+    }
+
+
+    const q=data[level][block];
+
+    document.getElementById("question").textContent=
+        q[0];
+
+
+    const answers=
+        document.getElementById("answers");
+
+
+    for(let i=1;i<=3;i++){
+
+        const button=
+            document.createElement("button");
+
+        button.textContent=
+            String.fromCharCode(64+i)+
+            ") "+
+            q[i];
+
+        button.onclick=()=>{
+            answer(i-1,button);
+        };
+
+        answers.appendChild(button);
+    }
+}
+
+
+/* =========================
+   RESPONDER
+========================= */
+
+function answer(choice,button){
+
+    if(gameOver)return;
+
+    const q=data[level][block];
+
+
+    /* RESPUESTA CORRECTA */
+
+    if(choice===q[4]){
+
+        playBreak();
+
+        document
+            .querySelectorAll("button")
+            .forEach(b=>b.disabled=true);
+
+
+        /* JEFE */
+
+        if(level===8){
+
+            bossLives--;
+
+            if(bossLives<=0){
+
+                document.getElementById("message").textContent=
+                    "💥 ¡HAS DERROTADO AL BLOQUE SUPREMO! 💥";
+
+                document.getElementById("blocks").innerHTML=`
+
+                    <div style="font-size:70px">
+                        👑 💥 💥 💥 👑
+                    </div>
+
+                `;
+
+                setTimeout(()=>{
+
+                    clearInterval(timerInterval);
+
+                    showFinalChoice();
+
+                },900);
+
+                return;
+            }
+
+
+            document.getElementById("message").textContent=
+                "💥 ¡GOLPE AL BLOQUE SUPREMO!";
+
+
+            setTimeout(()=>{
+
+                block++;
+
+                showQuestion();
+
+            },650);
+
+            return;
+        }
+
+
+        /* BLOQUE NORMAL */
+
+        document.getElementById("message").textContent=
+            "💥 ¡CRAAAAACK!";
+
+
+        setTimeout(()=>{
+
+            block++;
+
+
+            if(block>=3){
+
+                block=0;
+
+                const nivelSuperado=
+                    level+1;
+
+
+                /* RECUPERAR VIDA CADA 3 NIVELES */
+
+                if(
+                    nivelSuperado%3===0 &&
+                    lives<3
+                ){
+
+                    lives++;
+
+                }
+
+
+                if(level<8){
+
+                    level++;
+
+                    startLevel();
+
+                }else{
+
+                    clearInterval(timerInterval);
+
+                    showFinalChoice();
+
+                }
+
+            }else{
+
+                showQuestion();
+
+            }
+
+        },650);
+
+    }
+
+
+    /* RESPUESTA INCORRECTA */
+
+    else{
+
+        if(armor>0){ armor--; }
+        else { lives--; }
+        updateLives();
+
+        button.classList.add("shake");
+
+
+        document.getElementById("message").textContent=
+            failJokes[
+                Math.floor(
+                    Math.random()*
+                    failJokes.length
+                )
+            ];
+
+
+        playWrong();
+
+
+        document
+            .getElementById("game")
+            .classList.add("shake");
+
+
+        setTimeout(()=>{
+
+            document
+                .getElementById("game")
+                .classList.remove("shake");
+
+        },300);
+
+
+        if(lives<=0){
+
+            setTimeout(()=>{
+
+                gameOverScreen();
+
+            },600);
+
+        }
+
+    }
+}
+
+
+/* =========================
+   SONIDO ROMPER
+========================= */
+
+function playBreak(){
+
+    const a=new AudioContext();
+
+    const o=a.createOscillator();
+
+    const g=a.createGain();
+
+
+    o.type="square";
+
+
+    o.frequency.setValueAtTime(
+        180,
+        a.currentTime
+    );
+
+
+    o.frequency.exponentialRampToValueAtTime(
+        55,
+        a.currentTime+.2
+    );
+
+
+    g.gain.setValueAtTime(
+        .15,
+        a.currentTime
+    );
+
+
+    g.gain.exponentialRampToValueAtTime(
+        .001,
+        a.currentTime+.2
+    );
+
+
+    o.connect(g);
+
+    g.connect(a.destination);
+
+
+    o.start();
+
+    o.stop(
+        a.currentTime+.2
+    );
+}
+
+
+/* =========================
+   SONIDO ERROR
+========================= */
+
+function playWrong(){
+
+    const a=new AudioContext();
+
+    const o=a.createOscillator();
+
+    const g=a.createGain();
+
+
+    o.type="sawtooth";
+
+
+    o.frequency.setValueAtTime(
+        180,
+        a.currentTime
+    );
+
+
+    o.frequency.exponentialRampToValueAtTime(
+        80,
+        a.currentTime+.25
+    );
+
+
+    g.gain.setValueAtTime(
+        .08,
+        a.currentTime
+    );
+
+
+    g.gain.exponentialRampToValueAtTime(
+        .001,
+        a.currentTime+.25
+    );
+
+
+    o.connect(g);
+
+    g.connect(a.destination);
+
+
+    o.start();
+
+    o.stop(
+        a.currentTime+.25
+    );
+}
+
+
+/* =========================
+   GAME OVER
+========================= */
+
+function gameOverScreen(){
+
+    gameOver=true;
+
+    clearInterval(timerInterval);
+
+
+    let destroyed=block;
+
+    let blocks="";
+
+
+    for(let i=0;i<3-destroyed;i++){
+
+        blocks+="🧱 ";
+
+    }
+
+
+    let joke="";
+
+
+    if(destroyed===0)
+
+        joke=
+        "JAJAJAJA, hasta mi abuela se acuerda de eso 😭";
+
+
+    else if(destroyed===1)
+
+        joke=
+        "JAJAJA, no sabe ni contar hasta 10 💀";
+
+
+    else
+
+        joke=
+        "JAJAJAJA, no sabe nada 😂";
+
+
+    document.getElementById("game").innerHTML=`
+
+        <h1>💀 GAME OVER 💀</h1>
+
+        <div style="font-size:55px">
+            ${blocks}
+        </div>
+
+        <p style="font-size:25px">
+            ${joke}
+        </p>
+
+        <p>
+            Nivel alcanzado: ${level+1}/9
+        </p>
+
+        <p>
+            Bloques destruidos:
+            ${destroyed}/3
+        </p>
+
+        <button
+            class="bigbutton"
+            onclick="startGame()">
+
+            🔄 REINTENTAR
+
+        </button>
+
+        <button onclick="startScreen()">
+
+            🏠 MENÚ PRINCIPAL
+
+        </button>
+    `;
+}
+
+
+/* =========================
+   TIEMPO AGOTADO
+========================= */
+
+function timeout(){
+
+    gameOver=true;
+
+    clearInterval(timerInterval);
+
+
+    document.getElementById("game").innerHTML=`
+
+        <h1>⏰ ¡TIEMPO AGOTADO!</h1>
+
+        <div style="font-size:60px">
+            🧱 🧱 🧱
+        </div>
+
+        <p style="font-size:24px">
+            Los bloques han sobrevivido... 😈
+        </p>
+
+        <p>
+            Llegaste al nivel ${level+1}/9
+        </p>
+
+        <button
+            class="bigbutton"
+            onclick="startGame()">
+
+            🔄 REINTENTAR
+
+        </button>
+
+        <button onclick="startScreen()">
+
+            🏠 MENÚ PRINCIPAL
+
+        </button>
+    `;
+}
+
+
+/* =========================
+   ELECCIÓN FINAL
+========================= */
+
+function showFinalChoice(){
+
+    gameOver=true;
+
+
+    document.getElementById("game").innerHTML=`
+
+        <div style="font-size:38px">
+            🧱 🧱 🧱 🧱 🧱
+            🧱 🧱 🧱 🧱 🧱
+        </div>
+
+        <p style="font-size:25px">
+            😭 😭 😭 😭 😭
+        </p>
+
+        <p style="font-size:26px">
+
+            LO SENTIMOS MUCHO...<br>
+
+            POR FAVOR,
+            DÉJANOS VIVIR...
+
+        </p>
+
+
+        <button onclick="genocide()">
+
+            A) 💥 Acabar con ellos
+
+        </button>
+
+
+        <button onclick="pacifist()">
+
+            B) ❤️ Dejarlos vivir
+
+        </button>
+    `;
+}
+
+
+/* =========================
+   RUTA GENOCIDA
+========================= */
+
+function genocide(){
+
+    document.getElementById("game").innerHTML=`
+
+        <div style="font-size:35px">
+
+            💥 💥 💥 💥 💥
+            💥 💥 💥 💥 💥
+
+        </div>
+
+        <h1>
+            FELICIDADES
+        </h1>
+
+        <p style="font-size:25px">
+
+            HAS COMPLETADO LA<br>
+
+            <b>RUTA GENOCIDA</b>
+
+        </p>
+
+        <p style="font-size:25px">
+
+            Ahora vivirás tranquilo...
+
+        </p>
+
+        <p style="font-size:30px">
+
+            ...o tal vez no... 👁️
+
+        </p>
+
+
+        <button
+            class="bigbutton"
+            onclick="startGame()">
+
+            🔄 JUGAR OTRA VEZ
+
+        </button>
+
+
+        <button onclick="startScreen()">
+
+            🏠 MENÚ PRINCIPAL
+
+        </button>
+    `;
+}
+
+
+/* =========================
+   RUTA PACIFISTA
+========================= */
+
+function pacifist(){
+
+    document.getElementById("game").innerHTML=`
+
+        <div style="font-size:35px">
+
+            🧱 🧱 🧱 🧱 🧱
+            🧱 🧱 🧱 🧱 🧱
+
+        </div>
+
+        <h1>
+            🥹 ¡GRACIAS!
+        </h1>
+
+        <p style="font-size:27px">
+
+            NOS HAS DEJADO VIVIR. ❤️
+
+        </p>
+
+        <p>
+
+            HAS COMPLETADO LA<br>
+
+            <b>RUTA PACIFISTA</b>
+
+        </p>
+
+        <p>
+
+            Los bloques nunca
+            olvidarán tu bondad.
+
+        </p>
+
+
+        <button
+            class="bigbutton"
+            onclick="startGame()">
+
+            🔄 JUGAR OTRA VEZ
+
+        </button>
+
+
+        <button onclick="startScreen()">
+
+            🏠 MENÚ PRINCIPAL
+
+        </button>
+    `;
+}
+
+
+/* =========================
+   ARRANCAR JUEGO
+========================= */
+
+startScreen();
+
+</script>
+
+</body>
+</html>
